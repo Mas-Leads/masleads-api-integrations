@@ -4,6 +4,7 @@
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](python/)
 [![Node.js 18+](https://img.shields.io/badge/Node.js-18%2B-green.svg)](nodejs/)
 [![API Version](https://img.shields.io/badge/API-v1-orange.svg)](https://apidocs.masleads.es)
+[![Postman](https://img.shields.io/badge/Postman-Workspace-FF6C37?logo=postman&logoColor=white)](https://www.postman.com/winter-eclipse-621757/masleads-official-api/overview)
 
 Official reference integration kits and production starter templates for the **MasLeads B2B Lead Enrichment API**.
 
@@ -17,6 +18,7 @@ MasLeads provides high-accuracy, real-time B2B contact enrichment (verified busi
 | :--- | :--- | :--- | :--- | :--- |
 | **Python** | [`/python`](python/) | Python 3.10+ | `requests`, `flask` | HTTP client with automatic polling, CLI runner, Flask HMAC webhook receiver |
 | **Node.js** | [`/nodejs`](nodejs/) | Node.js 18+ | `express` (zero HTTP deps) | Native ESM client using `fetch`, CLI runner, Express HMAC webhook receiver |
+| **Postman** | [`/postman`](postman/) | Postman Desktop / Web / Newman | Pre-configured environment | Official collection with polling workflow, usage query, and Newman CLI support |
 
 ---
 
@@ -87,6 +89,18 @@ job = client.create_job(
 client.wait(job["job_id"], poll_interval=15)
 results = client.results(job["job_id"])
 print(results)
+```
+
+### Postman
+
+[![Run in Postman](https://run.pstmn.io/button.svg)](https://www.postman.com/winter-eclipse-621757/masleads-official-api/overview)
+
+Fork directly into your Postman workspace or run locally using [Newman](https://www.npmjs.com/package/newman):
+
+```bash
+npx newman run postman/MasLeads_API_Quickstart.postman_collection.json \
+  -e postman/MasLeads_API.postman_environment.json \
+  --env-var "api_key=sk_live_..."
 ```
 
 ### Node.js
