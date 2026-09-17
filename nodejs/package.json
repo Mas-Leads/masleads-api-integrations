@@ -1,0 +1,29 @@
+{
+  "name": "@masleads/api-integrations-node",
+  "version": "1.0.0",
+  "description": "Official Node.js integration kit for the MasLeads B2B Lead Enrichment API",
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "main": "src/masleads-client.js",
+  "scripts": {
+    "enrich": "node src/quickstart.js",
+    "webhook": "node src/webhook-server.js",
+    "check": "node --check src/masleads-client.js && node --check src/quickstart.js && node --check src/webhook-server.js"
+  },
+  "dependencies": {
+    "express": "^5.0.1"
+  },
+  "keywords": [
+    "masleads",
+    "b2b",
+    "lead-enrichment",
+    "prospecting",
+    "linkedin-enrichment",
+    "api-client",
+    "webhooks"
+  ],
+  "author": "MasLeads <engineering@masleads.es>",
+  "license": "MIT"
+}
