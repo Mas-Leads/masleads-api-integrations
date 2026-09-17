@@ -1,0 +1,111 @@
+{
+  "info": {
+    "_postman_id": "157f80cf-3427-4c8e-b5d8-7e9d17f2f665",
+    "name": "MasLeads API - Quickstart de cliente",
+    "description": "API key + LinkedIn + email o teléfono. Flujo asíncrono con polling cada 30 segundos.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      {"key": "key", "value": "X-API-Key", "type": "string"},
+      {"key": "value", "value": "{{api_key}}", "type": "string"},
+      {"key": "in", "value": "header", "type": "string"}
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const apiKey = pm.environment.get('api_key') || pm.collectionVariables.get('api_key') || pm.variables.get('api_key');",
+          "if (!apiKey) { throw new Error('Completa api_key en el entorno o en las variables de la colección'); }"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Comprobar cuenta y saldo",
+      "request": {
+        "method": "GET",
+        "url": {"raw": "{{base_url}}/usage", "host": ["{{base_url}}"], "path": ["usage"]},
+        "description": "No consume créditos. Comprueba la API key y muestra el saldo."
+      },
+      "event": [{"listen": "test", "script": {"exec": ["pm.test('Cuenta conectada', () => pm.response.to.have.status(200));"]}}]
+    },
+    {
+      "name": "Email",
+      "item": [
+        {
+          "name": "Crear job de email",
+          "x-example": {"field": "email"},
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Idempotency-Key", "value": "{{idempotency_email}}"}
+            ],
+            "body": {"mode": "raw", "raw": "{\n  \"field\": \"email\",\n  \"leads\": [{\n    \"linkedin_url\": \"{{linkedin_url}}\",\n    \"external_id\": \"{{external_id}}\"\n  }]\n}"},
+            "url": {"raw": "{{base_url}}/enrich/leads", "host": ["{{base_url}}"], "path": ["enrich", "leads"]}
+          },
+          "event": [
+            {"listen": "prerequest", "script": {"exec": ["if (!pm.environment.get('idempotency_email') && !pm.collectionVariables.get('idempotency_email')) { const idemp = `postman-email-${pm.variables.replaceIn('{{$guid}}')}`; if (pm.environment.name) { pm.environment.set('idempotency_email', idemp); } else { pm.collectionVariables.set('idempotency_email', idemp); } }"]}},
+            {"listen": "test", "script": {"exec": ["pm.test('Job creado', () => pm.response.to.have.status(201));", "const jid = pm.response.json().job_id;", "if (pm.environment.name) { pm.environment.set('job_id', jid); }", "pm.collectionVariables.set('job_id', jid);", "if (pm.response.code === 201) { pm.environment.unset('idempotency_email'); pm.collectionVariables.unset('idempotency_email'); }"]}}
+          ]
+        },
+        {
+          "name": "Consultar estado de email cada 30s",
+          "request": {"method": "GET", "url": {"raw": "{{base_url}}/jobs/{{job_id}}", "host": ["{{base_url}}"], "path": ["jobs", "{{job_id}}"]}},
+          "event": [{"listen": "test", "script": {"exec": ["const status = pm.response.json().status;", "if (['pending', 'processing'].includes(status)) {", "  setTimeout(() => pm.execution.setNextRequest('Consultar estado de email cada 30s'), 30000);", "} else if (status === 'completed') {", "  pm.execution.setNextRequest('Obtener resultados de email');", "} else {", "  pm.execution.setNextRequest(null);", "}"]}}]
+        },
+        {
+          "name": "Obtener resultados de email",
+          "request": {"method": "GET", "url": {"raw": "{{base_url}}/jobs/{{job_id}}/results", "host": ["{{base_url}}"], "path": ["jobs", "{{job_id}}", "results"]}},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Resultado disponible', () => pm.response.to.have.status(200));"]}}]
+        }
+      ]
+    },
+    {
+      "name": "Teléfono",
+      "item": [
+        {
+          "name": "Crear job de teléfono",
+          "x-example": {"field": "phone"},
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Idempotency-Key", "value": "{{idempotency_phone}}"}
+            ],
+            "body": {"mode": "raw", "raw": "{\n  \"field\": \"phone\",\n  \"leads\": [{\n    \"linkedin_url\": \"{{linkedin_url}}\",\n    \"external_id\": \"{{external_id}}\"\n  }]\n}"},
+            "url": {"raw": "{{base_url}}/enrich/leads", "host": ["{{base_url}}"], "path": ["enrich", "leads"]}
+          },
+          "event": [
+            {"listen": "prerequest", "script": {"exec": ["if (!pm.environment.get('idempotency_phone') && !pm.collectionVariables.get('idempotency_phone')) { const idemp = `postman-phone-${pm.variables.replaceIn('{{$guid}}')}`; if (pm.environment.name) { pm.environment.set('idempotency_phone', idemp); } else { pm.collectionVariables.set('idempotency_phone', idemp); } }"]}},
+            {"listen": "test", "script": {"exec": ["pm.test('Job creado', () => pm.response.to.have.status(201));", "const jid = pm.response.json().job_id;", "if (pm.environment.name) { pm.environment.set('job_id', jid); }", "pm.collectionVariables.set('job_id', jid);", "if (pm.response.code === 201) { pm.environment.unset('idempotency_phone'); pm.collectionVariables.unset('idempotency_phone'); }"]}}
+          ]
+        },
+        {
+          "name": "Consultar estado de teléfono cada 30s",
+          "request": {"method": "GET", "url": {"raw": "{{base_url}}/jobs/{{job_id}}", "host": ["{{base_url}}"], "path": ["jobs", "{{job_id}}"]}},
+          "event": [{"listen": "test", "script": {"exec": ["const status = pm.response.json().status;", "if (['pending', 'processing'].includes(status)) {", "  setTimeout(() => pm.execution.setNextRequest('Consultar estado de teléfono cada 30s'), 30000);", "} else if (status === 'completed') {", "  pm.execution.setNextRequest('Obtener resultados de teléfono');", "} else {", "  pm.execution.setNextRequest(null);", "}"]}}]
+        },
+        {
+          "name": "Obtener resultados de teléfono",
+          "request": {"method": "GET", "url": {"raw": "{{base_url}}/jobs/{{job_id}}/results", "host": ["{{base_url}}"], "path": ["jobs", "{{job_id}}", "results"]}},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Resultado disponible', () => pm.response.to.have.status(200));"]}}]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {"key": "base_url", "value": "https://api.masleads.es/api/v1", "type": "string"},
+    {"key": "api_key", "value": "", "type": "string"},
+    {"key": "linkedin_url", "value": "https://www.linkedin.com/in/usuario", "type": "string"},
+    {"key": "external_id", "value": "CRM-123", "type": "string"},
+    {"key": "job_id", "value": "", "type": "string"},
+    {"key": "poll_interval_ms", "value": "30000", "type": "string"}
+  ]
+}
